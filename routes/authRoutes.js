@@ -4,10 +4,8 @@ const route = express.Router();
 const db = require('../data/dbConfig.js')
 
 
-route.get('/api/users', (req, res) => {
-    db('users')
-    .then(response => res.status(200).json(response))
-    .catch(error => res.status(500).json({error, message:"Something went wrong!"}))
+route.get('/', (req, res) => {
+    res..catch(error => res.status(500).json({error, message:"Something went wrong!"}))
 });
 
 route.post('/api/register', (req, res) => {
@@ -25,17 +23,28 @@ route.post('/api/register', (req, res) => {
     });
 });
 
-// route.get('/api/login', (req, res) => {
-
-// })
-
-function restricted(req, res, next) {
+route.post('/api/login', (req, res) => {
     const {username, password} = req.body;
     if ( username && password) {
         db('users').where({username}).first()
         .then(user => {
             if (user && bcrypt.compareSync(password, user.password)) {
-                res.status(200).json(user)
+                res.status(200).json({message: `Welcome ${username}!`})
+            } else { res.status(400).json({message: "Invalid credentials."}) }
+        })
+        .catch(error => res.status(500).json(error))
+    } else {
+        res.status(400).json({message: "Please provide credentials"})
+    }
+})
+
+function restricted(req, res, next) {
+    const {username, password} = req.headers;
+    if ( username && password) {
+        db('users').where({username}).first()
+        .then(user => {
+            if (user && bcrypt.compareSync(password, user.password)) {
+                next()
             } else { res.status(400).json({message: "Invalid credentials."}) }
         })
         .catch(error => res.status(500).json(error))
@@ -44,8 +53,8 @@ function restricted(req, res, next) {
     }
 }
 
-route.post('/api/login', restricted, (req, res) => {
-    db('users').select('id', 'username', 'password')
+route.get('/api/users', restricted, (req, res) => {
+    db('users')
     .then(users => {
         res.json(users)
     })
