@@ -3,7 +3,6 @@ const bcrypt = require('bcryptjs');
 const route = express.Router();
 const db = require('../data/dbConfig.js')
 
-
 route.get('/', (req, res) => {
     res..catch(error => res.status(500).json({error, message:"Something went wrong!"}))
 });
