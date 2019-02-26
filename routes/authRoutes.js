@@ -1,7 +1,31 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const route = express.Router();
-const db = require('../data/dbConfig.js')
+const db = require('../data/dbConfig.js');
+
+const session = require('express-session');
+const KnexSessionStore = require('connect-session-knex')(session);
+
+const sessionConfig = {
+    name: 'sess',
+    secret: 'dogs are cool',
+    cookie: {
+        maxAge: 1000*60*60,
+        secure: false,
+    },
+    httpOnly: true,
+    resave: false,
+    saveUninitialized: false,
+    store: new KnexSessionStore({
+        knex: db,
+        tablename: 'sessions',
+        sidfieldname: 'sid',
+        createtable: true,
+        clearInterval: 1000*60*60,
+    })
+}
+
+route.use(session(sessionConfig));
 
 route.get('/', (req, res) => {
     res.catch(error => res.status(500).json({error, message:"Something went wrong!"}))
@@ -54,6 +78,15 @@ route.get('/api/users', restricted, (req, res) => {
         res.json(users)
     })
     .catch(err => res.send(err))
+})
+
+route.get('/api/logout', (req, res) => {
+    if (session) {
+        req.session.destroy();
+        res.send('logged out')
+    } else {
+        res.end()
+    }
 })
 
 module.exports = route;
